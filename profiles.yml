@@ -3,6 +3,6 @@ student_performance:
   outputs:
     dev:
       type: duckdb
-      # استخدم مسار DB صحيح في مشروعك (لاحظ الشرطية للـ Backslash أو استخدم /)
+      
       path: "E:/New folder/Student-Performance-Dashboar-/student_performance.duckdb"
       schema: analytics

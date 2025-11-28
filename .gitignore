@@ -2,6 +2,8 @@
 
 # DuckDB files (do NOT push the DB file)
 *.duckdb
+student_performance.duckdb
+student_dw.duckdb
 
 # Python
 __pycache__/
