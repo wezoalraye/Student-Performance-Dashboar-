@@ -1,0 +1,37 @@
+# Project-level gitignore
+
+# DuckDB files (do NOT push the DB file)
+*.duckdb
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# dbt artifacts
+student_dbt/target/
+student_dbt/dbt_modules/
+
+# logs
+logs/
+
+# Output
+*.csv
+
+# Other
+*.sqlite

@@ -1,0 +1,18 @@
+version: 2
+
+sources:
+  - name: staging
+    schema: staging
+    tables:
+      - name: raw_students
+        columns:
+          - name: student_id
+            tests:
+              - unique
+              - not_null
+          - name: gpa
+            tests:
+              - not_null
+          - name: attendance_rate
+            tests:
+              - not_null

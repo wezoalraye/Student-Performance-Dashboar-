@@ -1,0 +1,85 @@
+
+version: 2
+
+models:
+  - name: stg_students
+    description: "Staging model for raw students data"
+    columns:
+      - name: student_id
+        description: "Original student id from source"
+        tests:
+          - unique
+          - not_null
+      - name: gpa
+        description: "Student GPA from source"
+        tests:
+          - not_null
+      - name: attendance_rate
+        description: "Student attendance percentage from source"
+        tests:
+          - not_null
+
+  - name: dim_student
+    description: "Dimension table for students"
+    columns:
+      - name: student_key
+        description: "Surrogate key for student"
+        tests:
+          - unique
+          - not_null
+      - name: student_id
+        description: "Original student id from source"
+        tests:
+          - not_null
+
+  - name: dim_major
+    description: "Dimension table for majors"
+    columns:
+      - name: major_key
+        description: "Surrogate key for major"
+        tests:
+          - unique
+          - not_null
+      - name: major_code
+        description: "Major code"
+        tests:
+          - not_null
+
+  - name: dim_performance_category
+    description: "Performance category dimension"
+    columns:
+      - name: performance_key
+        description: "Surrogate key for performance category"
+        tests:
+          - unique
+          - not_null
+      - name: category_code
+        description: "Category code (HIGH, MEDIUM, LOW)"
+        tests:
+          - not_null
+
+  - name: dim_date
+    description: "Date dimension"
+    columns:
+      - name: date_key
+        description: "Surrogate numeric key for the date"
+        tests:
+          - unique
+          - not_null
+      - name: full_date
+        description: "Date value"
+        tests:
+          - not_null
+
+  - name: fact_student_performance
+    description: "Fact table for student performance snapshots"
+    columns:
+      - name: performance_id
+        description: "Surrogate key for the fact record"
+        tests:
+          - unique
+          - not_null
+      - name: student_key
+        description: "FK to student dimension"
+        tests:
+          - not_null
