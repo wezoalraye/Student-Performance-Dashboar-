@@ -1,91 +1,69 @@
 import streamlit as st
 import duckdb
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+import os
+from pathlib import Path
 
-st.set_page_config(page_title="Student Performance Dashboard", layout="wide")
-
-
-# Load Data From DuckDB Using Star Schema Joins
 @st.cache_data
 def load_data():
-    con = duckdb.connect("student_performance.duckdb")  # اسم قاعدة البيانات
+    # ابدأ بمسار القاعدة بالنسبة لملف dashboard.py (يتعامل مع حالات الاستضافة)
+    base_dir = Path(__file__).parent
+    db_path = base_dir / "student_performance.duckdb"  # تأكد من اسم الملف الموجود بالـ repo
+    csv_path = base_dir / "student_data_with_performance.csv"  # ملف احتياطي إن لم توجد القاعدة
 
-    query = """
-    SELECT 
-        f.Student_ID,
-        s.Student_Name,
-        s.Gender,
-        m.Major_Name AS Major,
-        f.GPA,
-        f.Attendance,
-        p.Category_Name AS Performance_Category,
-        d.Semester,
-        d.Academic_Year
-    FROM fact_student_performance f
-    JOIN dim_student s ON f.Student_ID = s.Student_ID
-    JOIN dim_major m ON f.Major_ID = m.Major_ID
-    JOIN dim_performance_category p ON f.Performance_Category_ID = p.ID
-    JOIN dim_date d ON f.Date_ID = d.Date_ID
-    """
-    
-    df = con.execute(query).fetchdf()
-    con.close()
-    return df
+    # Diagnostics info (تُطبع في لوغ Streamlit)
+    st.write(f"Looking for DB at: {db_path}")
+    st.write(f"Looking for CSV at: {csv_path}")
 
+    # إذا الملف موجود - حاول الاتصال به
+    try:
+        if db_path.exists():
+            con = duckdb.connect(database=str(db_path))
+            # عرض جداول القاعدة لتشخيص سريع
+            try:
+                tables = con.execute("SHOW TABLES").fetchdf()
+                st.write("DuckDB tables:", tables)
+            except Exception as e:
+                st.write("Could not list tables:", repr(e))
 
-df = load_data()
+            # تحقق من وجود الجداول الأساسية قبل تنفيذ الاستعلام
+            required_tables = {"fact_student_performance", "dim_student", "dim_major", "dim_performance_category", "dim_date"}
+            existing_tables = set(con.execute("SHOW TABLES").fetchall()[0] if con.execute("SHOW TABLES").fetchall() else [])
+            # بدلًا من التعقيد أعلاه سنجرب تنفيذ الاستعلام مباشرة مع اعتراض الأخطاء
+            query = """
+            SELECT 
+                f.Student_ID,
+                s.Student_Name,
+                s.Gender,
+                m.Major_Name AS Major,
+                f.GPA,
+                f.Attendance,
+                p.Category_Name AS Performance_Category,
+                d.Semester,
+                d.Academic_Year
+            FROM fact_student_performance f
+            JOIN dim_student s ON f.Student_ID = s.Student_ID
+            JOIN dim_major m ON f.Major_ID = m.Major_ID
+            JOIN dim_performance_category p ON f.Performance_Category_ID = p.ID
+            JOIN dim_date d ON f.Date_ID = d.Date_ID
+            """
+            df = con.execute(query).fetchdf()
+            con.close()
+            return df
 
-# Dashboard Title
-st.title("📊 Student Performance Dashboard (DuckDB + DBT Powered)")
+        # إن لم توجد القاعدة، جرب قراءة CSV احتياطي
+        elif csv_path.exists():
+            st.warning("DuckDB file not found — loading CSV fallback.")
+            df = pd.read_csv(csv_path)
+            return df
 
-
-# Filters Section
-col1, col2, col3 = st.columns(3)
-gender_filter = col1.selectbox("Filter by Gender", ["All"] + sorted(df["Gender"].unique().tolist()))
-major_filter = col2.selectbox("Filter by Major", ["All"] + sorted(df["Major"].unique().tolist()))
-year_filter = col3.selectbox("Academic Year", ["All"] + sorted(df["Academic_Year"].unique().tolist()))
-
-filtered_df = df.copy()
-
-if gender_filter != "All":
-    filtered_df = filtered_df[filtered_df["Gender"] == gender_filter]
-
-if major_filter != "All":
-    filtered_df = filtered_df[filtered_df["Major"] == major_filter]
-
-if year_filter != "All":
-    filtered_df = filtered_df[filtered_df["Academic_Year"] == year_filter]
-
-
-# Dataset Preview
-st.subheader("📌 Dataset Preview")
-st.dataframe(filtered_df.head())
-
-# GPA Distribution
-st.subheader("📈 GPA Distribution")
-fig, ax = plt.subplots()
-sns.histplot(filtered_df["GPA"], kde=True, ax=ax)
-st.pyplot(fig)
-
-# GPA by Major
-st.subheader("🎓 Average GPA by Major")
-fig2, ax2 = plt.subplots(figsize=(8,4))
-filtered_df.groupby("Major")["GPA"].mean().sort_values().plot(kind="bar", ax=ax2)
-st.pyplot(fig2)
-
-# Attendance vs GPA
-st.subheader("📅 Attendance vs GPA")
-fig3, ax3 = plt.subplots(figsize=(8,4))
-sns.scatterplot(data=filtered_df, x="Attendance", y="GPA", hue="Performance_Category", ax=ax3)
-st.pyplot(fig3)
-
-# Performance Category Pie Chart
-st.subheader("🏅 Performance Category Distribution")
-fig4, ax4 = plt.subplots()
-filtered_df["Performance_Category"].value_counts().plot(kind="pie", autopct="%1.1f%%", ax=ax4)
-ax4.set_ylabel("")
-st.pyplot(fig4)
-
-st.success("Dashboard Loaded Successfully 🚀 (Data Warehouse & Joins Enabled)")
+        else:
+            # لا يوجد DB ولا CSV — ارجع خطأ واضح
+            raise FileNotFoundError(f"Neither {db_path} nor {csv_path} were found in the app directory.")
+    except Exception as e:
+        # سجل الخطأ الكامل في لوق Streamlit (ستظهر في صفحة Manage app logs)
+        st.error("Data loading failed. See logs for details.")
+        # اطبع الاستثناء الكامل لكي يظهر في لوج السحابة
+        st.write("Exception details:", repr(e))
+        # رمي الخطأ مجدداً إذا أردت أن يتوقف التطبيق (أو يمكن إرجاع df فارغ)
+        raise
