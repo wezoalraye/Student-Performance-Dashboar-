@@ -32,20 +32,21 @@ def load_data():
             # بدلًا من التعقيد أعلاه سنجرب تنفيذ الاستعلام مباشرة مع اعتراض الأخطاء
             query = """
                  SELECT 
-                     f.Student_ID,
-                     s.Student_Name,
-                     s.Gender,
-                     m.Major_Name AS Major,
-                     f.GPA,
-                     f.Attendance,
-                     p.Category_Name AS Performance_Category,
-                     d.Semester,
-                     d.Academic_Year
-                     FROM analytics_facts.fact_student_performance f
-                     JOIN analytics_dims.dim_student s ON f.Student_ID = s.Student_ID
-                     JOIN analytics_dims.dim_major m ON f.Major_ID = m.Major_ID
-                     JOIN analytics_dims.dim_performance_category p ON f.Performance_Category_ID = p.ID
-                     JOIN analytics_dims.dim_date d ON f.Date_ID = d.Date_ID;
+                   f.Student_ID,
+                   s.Student_Name,
+                   s.Gender,
+                   m.Major_Name AS Major,
+                   f.GPA,
+                   f.Attendance,
+                   p.Category_Name AS Performance_Category,
+                   d.Semester,
+                   d.Academic_Year
+                  FROM analytics_facts.fact_student_performance f
+                  JOIN analytics_dims.dim_student s ON f.Student_ID = s.Student_ID
+                  JOIN analytics_dims.dim_major m ON f.Major_ID = m.Major_ID
+                  JOIN analytics_dims.dim_performance_category p ON f.Performance_Category_ID = p.ID
+                  JOIN analytics_dims.dim_date d ON f.Date_ID = d.Date_ID
+
 
             """
             df = con.execute(query).fetchdf()
