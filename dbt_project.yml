@@ -8,13 +8,14 @@ model-paths: ["student_dbt/models"]
 analysis-paths: ["student_dbt/analyses"]
 
 models:
-  example:
-    staging:
-      +materialized: view
-      +schema: staging
-    dimensions:
-      +materialized: table
-      +schema: dimensions
-    facts:
-      +materialized: table
-      +schema: facts
+  student_performance:
+    example:
+      staging:
+        +materialized: view
+        +schema: staging
+      dimensions:
+        +materialized: table
+        +schema: dimensions
+      facts:
+        +materialized: table
+        +schema: facts

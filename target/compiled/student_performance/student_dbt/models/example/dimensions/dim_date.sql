@@ -1,8 +1,12 @@
 
 
-WITH date_spine AS (
-    SELECT DATE '2024-01-01' + INTERVAL (d) DAY as date_day
-    FROM generate_series(0, 365) as t(d)
+WITH bounds AS (
+    SELECT COALESCE(MIN(CAST(loaded_at AS DATE)), DATE '2024-01-01') as start_date
+    FROM staging.raw_students
+),
+date_spine AS (
+    SELECT bounds.start_date + INTERVAL (d) DAY as date_day
+    FROM bounds, generate_series(0, date_diff('day', bounds.start_date, CURRENT_DATE)) as t(d)
 ),
 
 final AS (
